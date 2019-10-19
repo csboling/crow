@@ -20,6 +20,7 @@ typedef enum{ C_none
 uint8_t Caw_Init( void );
 
 void Caw_send_raw( uint8_t* buf, uint32_t len );
+void Caw_send_blocking( char* buf, uint32_t len, int chunk );
 void Caw_send_luachunk( char* text );
 void Caw_send_luaerror( char* error_msg );
 void Caw_send_value( uint8_t type, float value ); // enum the type

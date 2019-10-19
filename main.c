@@ -71,9 +71,9 @@ int main(void)
         }
         Random_Update();
         // check/execute single event
-        event_t e;
-        if( event_next(&e) ){
-            (*app_event_handlers[e.type])(&e);
-        }
+        /* event_t e; */
+        /* if( event_next(&e) ){ */
+        /*     (*app_event_handlers[e.type])(&e); */
+        /* } */
     }
 }

@@ -25,6 +25,19 @@ __disable_irq();
 __set_PRIMASK( old_primask );
 }
 
+void Caw_send_blocking( char* buf, uint32_t len, int chunk )
+{
+    uint8_t* addr = (uint8_t*)buf;
+
+    while( len > chunk ){
+        Caw_send_raw( (uint8_t*)addr, chunk );
+        len -= chunk;
+        addr += chunk;
+        HAL_Delay(3); // wait for usb tx
+    }
+    Caw_send_raw( (uint8_t*)addr, len );
+}
+
 // luachunk expects a \0 terminated string
 void Caw_send_luachunk( char* text )
 {

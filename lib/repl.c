@@ -43,6 +43,7 @@ void REPL_init( lua_State* lua )
                 printf("failed to load user script\n");
                 Caw_send_luachunk("failed to load user script");
             }
+            Caw_send_luachunk("free");
             free(new_script);
             break;
         case USERSCRIPT_Clear:
@@ -66,26 +67,31 @@ void REPL_upload( int flash )
     if( repl_mode == REPL_discard ){
         Caw_send_luachunk("upload failed, returning to normal mode");
     } else {
+      Caw_send_luachunk("////////////////////////////////");
+      Caw_send_blocking(new_script, new_script_len, 0x200);
+      Caw_send_luachunk("////////////////////////////////");
         if( !Lua_eval( Lua, new_script
                           , new_script_len
                           , Caw_send_luaerror
                           ) ){ // successful load
-            if( flash ){
-                // TODO if we're setting init() should check it doesn't crash
-                if( Flash_write_user_script( new_script
-                                           , new_script_len
-                                           ) ){
-                    printf("flash write failed\n");
-                    Caw_send_luachunk("flash write failed");
-                }
-                printf("script saved, len: %i\n", new_script_len);
-            } else {
-                Caw_send_luachunk("running...");
-            }
-            Lua_crowbegin();
+            Caw_send_luachunk("script ok");
+        /* /\*     if( flash ){ *\/ */
+        /* /\*         // TODO if we're setting init() should check it doesn't crash *\/ */
+        /* /\*         if( Flash_write_user_script( new_script *\/ */
+        /* /\*                                    , new_script_len *\/ */
+        /* /\*                                    ) ){ *\/ */
+        /* /\*             printf("flash write failed\n"); *\/ */
+        /* /\*             Caw_send_luachunk("flash write failed"); *\/ */
+        /* /\*         } *\/ */
+        /* /\*         printf("script saved, len: %i\n", new_script_len); *\/ */
+        /* /\*     } else { *\/ */
+        /* /\*         Caw_send_luachunk("running..."); *\/ */
+        /* /\*     } *\/ */
+        /*     /\* Lua_crowbegin(); *\/ */
         } else {
             Caw_send_luachunk("evaluation failed");
         }
+        Caw_send_luachunk("free");
         free(new_script);
     }
     repl_mode = REPL_normal;
@@ -94,6 +100,7 @@ void REPL_upload( int flash )
 void REPL_eval( char* buf, uint32_t len, ErrorHandler_t errfn )
 {
     if( repl_mode == REPL_normal ){
+        Caw_send_blocking(buf, len, 0x200);
         if(Lua_eval( Lua, buf
                      , len
                      , errfn
@@ -114,15 +121,7 @@ void REPL_print_script( void )
             break;
         case USERSCRIPT_User:
             length = Flash_read_user_scriptlen();
-            char* addr = Flash_read_user_scriptaddr();
-            const int chunk = 0x200;
-            while( length > chunk ){
-                Caw_send_raw( (uint8_t*)addr, chunk );
-                length -= chunk;
-                addr += chunk;
-                HAL_Delay(3); // wait for usb tx
-            }
-            Caw_send_raw( (uint8_t*)addr, length );
+            Caw_send_blocking(Flash_read_user_scriptaddr(), length, 0x200);
             break;
         case USERSCRIPT_Clear:
             Caw_send_luachunk("no user script.");
@@ -136,6 +135,7 @@ static void REPL_receive_script( char* buf, uint32_t len, ErrorHandler_t errfn )
     if( new_script_len + len >= USER_SCRIPT_SIZE ){
         Caw_send_luachunk("!script: upload is too big");
         repl_mode = REPL_discard;
+        Caw_send_luachunk("free");
         free(new_script);
     } else {
         memcpy( &new_script[new_script_len], buf, len );
@@ -145,6 +145,7 @@ static void REPL_receive_script( char* buf, uint32_t len, ErrorHandler_t errfn )
 
 static bool REPL_new_script_buffer( uint32_t len )
 {
+    Caw_send_luachunk("alloc");
     new_script = malloc(len);
     if( new_script == NULL ){
         printf("out of mem\n");
