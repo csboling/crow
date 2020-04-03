@@ -269,10 +269,12 @@ zip: $(BIN)
 	@echo f2l $< "->" $@
 	@$(FENNEL) --compile $< > $@
 
-%.lua.h: %.lua util/l2h.lua
-	@luac -p $<
-	@echo l2h $< "->" $@
-	@lua util/l2h.lua $<
+%.luac: %.lua
+	@luac -s -o $@ $<
+
+%.lua.h: %.luac util/bytecode2h.lua
+	@echo bytecode2h $< "->" $@
+	@lua util/bytecode2h.lua $<
 
 Startup.o: $(STARTUP)
 	@$(CC) $(CFLAGS) -c $< -o $@
@@ -294,7 +296,7 @@ clean:
 	@rm -rf Startup.lst $(TARGET).elf.lst $(OBJS) $(AUTOGEN) \
 	$(TARGET).bin  $(TARGET).out  $(TARGET).hex \
 	$(TARGET).map  $(TARGET).dmp  $(EXECUTABLE) $(DEP) \
-	$(BUILD_DIR) lua/*.lua.h \
+	$(BUILD_DIR) lua/*.lua.h lua/*.luac \
 	$(TARGET)-$(GIT_VERSION)/  *.zip \
 
 splint:

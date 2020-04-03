@@ -6,7 +6,11 @@
 #include "../submodules/lua/src/lua.h" // lua_State*
 
 typedef void (*ErrorHandler_t)(char* error_message);
-struct lua_lib_locator{ const char* name; const char* addr_of_luacode; };
+struct lua_lib_locator{
+    const char* name;
+    const char* addr_of_luacode;
+    size_t len;
+};
 
 lua_State* Lua_Init(void);
 lua_State* Lua_Reset( void );

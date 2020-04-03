@@ -42,17 +42,17 @@
 #define WATCHDOG_COUNT     2        // how many watchdogs before 'frozen'
 
 const struct lua_lib_locator Lua_libs[] =
-    { { "lua_crowlib"   , lua_crowlib   }
-    , { "lua_asl"       , lua_asl       }
-    , { "lua_asllib"    , lua_asllib    }
-    , { "lua_metro"     , lua_metro     }
-    , { "lua_input"     , lua_input     }
-    , { "lua_output"    , lua_output    }
-    , { "lua_ii"        , lua_ii        }
-    , { "build_iihelp"  , build_iihelp  }
-    , { "lua_calibrate" , lua_calibrate }
-    , { "lua_midi"      , lua_midi      }
-    , { NULL            , NULL          }
+    { { "lua_crowlib"   , lua_crowlib   , lua_crowlib_len   }
+    , { "lua_asl"       , lua_asl       , lua_asl_len       }
+    , { "lua_asllib"    , lua_asllib    , lua_asllib_len    }
+    , { "lua_metro"     , lua_metro     , lua_metro_len     }
+    , { "lua_input"     , lua_input     , lua_input_len     }
+    , { "lua_output"    , lua_output    , lua_output_len    }
+    , { "lua_ii"        , lua_ii        , lua_ii_len        }
+    , { "build_iihelp"  , build_iihelp  , build_iihelp_len  }
+    , { "lua_calibrate" , lua_calibrate , lua_calibrate_len }
+    , { "lua_midi"      , lua_midi      , lua_midi_len      }
+    , { NULL            , NULL          , 0                 }
     };
 
 // Basic crow script
@@ -89,7 +89,7 @@ lua_State* Lua_Init(void)
     luaL_openlibs(L);
     Lua_linkctolua(L);
     Lua_eval(L, lua_bootstrap
-              , strlen(lua_bootstrap)
+              , lua_bootstrap_len
               , "=lib"
               ); // redefine dofile(), print(), load crowlib
     return L;
@@ -114,7 +114,7 @@ lua_State* Lua_Reset( void )
 void Lua_load_default_script( void )
 {
     Lua_eval(L, lua_First
-              , strlen(lua_First)
+              , lua_First_len
               , "=First.lua"
               );
 }
@@ -135,7 +135,8 @@ static int _find_lib( const struct lua_lib_locator* lib, const char* name )
     uint8_t i = 0;
     while( lib[i].addr_of_luacode != NULL ){
         if( !strcmp( name, lib[i].name ) ){ // if the strings match
-            if( luaL_dostring( L, lib[i].addr_of_luacode ) ){
+            if( luaL_loadbuffer( L, lib[i].addr_of_luacode, lib[i].len, name )
+	     || lua_pcall(L, 0, 0, 0)){
                 printf("can't load library: %s\n", (char*)lib[i].name );
                 // lua error
                 printf( "%s\n", (char*)lua_tostring( L, -1 ) );
